@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-archive
+  labels:
+    app: docker-archive
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docker-archive
+  template:
+    metadata:
+      labels:
+        app: docker-archive
+    spec:
+      containers:
+      - name: registry
+        image: registry:2.7.1
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - mountPath: /var/lib/registry
+          name: docker-registry-storage
+      - name: nginx
+        image: nginx:stable
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /data
+          name: docker-archives-storage
+        - mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+          readOnly: true
+          name: nginx-conf
+      - name: exporter
+        image:
+        ports:
+          - containerPort: 3000
+        volumeMounts:
+          - mountPath: /data
+            name: docker-archives-storage
+          - mountPath: /images
+            name: docker-registry-storage
+      volumes:
+      - name: docker-archives-storage
+        persistentVolumeClaim:
+          claimName: docker-archives-pvc
+      - name: docker-registry-storage
+        persistentVolumeClaim:
+          claimName: docker-registry-pvc
+      - name: nginx-conf
+        configMap:
+          name: nginx-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-archive
+spec:
+  type: ClusterIP
+  selector:
+    app: docker-archive
+  ports:
+    - name: docker
+      protocol: TCP
+      port: 5000
+      targetPort: 5000
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 80
+    - name: exporter
+      protocol: TCP
+      port: 3000
+      targetPort: 3000
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: docker-archives-pvc
+spec:
+  storageClassName: rook-cephfs
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: docker-registry-pvc
+spec:
+  storageClassName: rook-cephfs
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+data:
+  nginx.conf: |
+    worker_processes 1;
+    
+    events {
+      worker_connections 1024;
+    }
+    
+    http {
+      include mime.types;
+      
+      server {
+        listen 80;
+        
+        location / {
+          root html;
+          index index.html index.htm;
+        }
+
+        location /data {
+          root /data;
+          autoindex on;
+        }
+      }
+    }
