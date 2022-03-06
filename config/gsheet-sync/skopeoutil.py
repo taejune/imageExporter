@@ -1,3 +1,4 @@
+
 import subprocess
 import re
 
@@ -11,7 +12,7 @@ class SkopeoUtil:
         self.registries = registries
 
     def check_image(self, name):
-        print('check', name)
+        print('Check if exist image:', name, '...')
         for reg in self.registries.values():
             if re.compile(reg['regex']).search(name) != None:
                 try:
@@ -21,15 +22,17 @@ class SkopeoUtil:
                         subprocess.run(self.CHECKCMD.format(IMAGE=name), check=True, shell=True, capture_output=True).check_returncode()
                     return (name, True)
                 except subprocess.SubprocessError as e:
+                    print(e.stderr)
                     return (name, False)
         try:
             subprocess.run(self.CHECKCMD_WITH_CRED.format(IMAGE=name, CRED=self.registries['docker.io']['credential']), check=True, shell=True, capture_output=True).check_returncode()
             return (name, True)
         except subprocess.SubprocessError as e:
+            print(e.stderr)
             return (name, False)
 
     def copy_image(self, name, copy_to):
-        print('copy', name)
+        print('Copying image:', name, '...')
         for reg in self.registries.values():
             if re.compile(reg['regex']).search(name) != None:
                 try:
@@ -39,9 +42,11 @@ class SkopeoUtil:
                         subprocess.run(self.COPYCMD.format(IMAGE=name, DEST=copy_to), check=True, shell=True, capture_output=True).check_returncode()
                     return (name, True)
                 except subprocess.SubprocessError as e:
+                    print(e.stderr)
                     return (name, False)
         try:
             subprocess.run(self.COPYCMD_WITH_CRED.format(IMAGE=name, CRED=self.registries['docker.io']['credential'], DEST=copy_to), check=True, shell=True, capture_output=True).check_returncode()
             return (name, True)
         except subprocess.SubprocessError as e:
+            print(e.stderr)
             return (name, False)
