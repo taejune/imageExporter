@@ -8,7 +8,7 @@ RUN npm install
 
 COPY . .
 
-RUN chmod 700 exporter.sh
+RUN chmod 700 archive-upload.sh
 
 EXPOSE 3000
 

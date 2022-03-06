@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 if [ ! -d $1 ]
 then
@@ -15,4 +16,4 @@ fi
 NOW=$(date "+%Y%m%d-%H%M")
 
 tar -zcf $NOW.tar.gz $1
-mv $NOW.tar.gz $2
+scp $NOW.tar.gz $2
