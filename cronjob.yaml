@@ -1,0 +1,21 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: curl
+              image: curlimages/curl
+              command:
+                - "/bin/sh"
+                - "-c"
+                - |
+                  curl -X "POST" "http://172.26.227.231:30800" \
+                  -H 'Content-Type: application/json' \
+                  -d '{"sheet":"https://docs.google.com/spreadsheets/d/1_KVOzzVlAl8VQ6y6I4y2NnsokjF-yE51uOXcZPyzDEU/edit#gid=0","docker":"tmaxcloudck@tmax@cloud"}'
+          restartPolicy: OnFailure
