@@ -1,13 +1,10 @@
 FROM node:16.14-alpine
 
+RUN apk add --no-cache openssh sshpass
+
 WORKDIR /app
-
-COPY package*.json ./
-
-RUN npm install
-
 COPY . .
-
+RUN npm install
 RUN chmod 700 archive-upload.sh
 
 EXPOSE 3000

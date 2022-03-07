@@ -1,15 +1,15 @@
-
 DOCKERCMD=$(shell which docker)
 DOCKERBUILD=$(DOCKERCMD) build
+DOCKERPUSH=$(DOCKERCMD) push
 
-IMAGENAME=regarchiver
-VERSIONTAG=dev
-
-SOURCE_PATH=/tmp/vol1
-DESTINATION_PATH=/tmp/vol2
-DOCKER_REG_VOLUME_PATH=src
-STATIC_SRV_VOLUME_PATH=/dst
+REPO=tmaxcloudck
+IMAGE=regarchiver
+TAG=dev
 
 build:
 	@echo "building..."
-	@$(DOCKERBUILD) . -t $(IMAGENAME):$(VERSIONTAG)
+	@$(DOCKERBUILD) . -t $(REPO)/$(IMAGE):$(TAG)
+
+push:
+	@echo "push $(REPO)/$(IMAGE):$(TAG)..."
+	@$(DOCKERPUSH) $(REPO)/$(IMAGE):$(TAG)
