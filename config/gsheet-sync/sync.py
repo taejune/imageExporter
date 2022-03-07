@@ -15,6 +15,7 @@ DEFAULT_ROW_FROM = 2
 DEFAULT_COLUMN_NUMBER = 1
 DEFAULT_REGISTRY_URL = "localhost:5000"
 DEFAULT_OUTPUT_DIR = "."
+DEFAULT_SYNC_TRIGGER_URL = "localhost:3000"
 
 url_from = os.environ['SHEET_URL'] if os.environ.get('SHEET_URL') is not None else DEFAULT_URL
 sheet_number = os.environ['SHEET_NUMBER'] if os.environ.get('SHEET_NUMBER') is not None else DEFAULT_SHEET_NUMBER
@@ -22,6 +23,7 @@ image_idx = os.environ['COLUMN_NUMBER'] if os.environ.get('COLUMN_NUMBER') is no
 row_from = os.environ['ROW_FROM'] if os.environ.get('ROW_FROM') is not None else DEFAULT_ROW_FROM
 dest_reg = os.environ['REGISTRY_URL'] if os.environ.get('REGISTRY_URL') is not None else DEFAULT_REGISTRY_URL
 output_dir = os.environ['OUTPUT_DIR'] if os.environ.get('OUTPUT_DIR') is not None else DEFAULT_OUTPUT_DIR
+sync_trigger_url = os.environ['SYNC_TRIGGER_URL'] if os.environ.get('SYNC_TRIGGER_URL') is not None else DEFAULT_SYNC_TRIGGER_URL
 
 dockerio_credential = os.environ['DOCKER_CRED'] if os.environ.get('DOCKER_CRED') is not None else ''
 quayio_credential = os.environ['QUAY_CRED'] if os.environ.get('QUAY_CRED') is not None else ''
@@ -61,8 +63,10 @@ with open(filename, "w") as f:
     for p in concurrent.futures.as_completed(copying_procs):
         copied.update({p.result()[0]: p.result()[1]})
 
-    results = {}
+    results = {'sync': {}}
     for image in checked.keys():
-        results[image] = { 'access':  checked[image], 'copied': copied[image] }
+        results['sync'][image] = { 'access':  checked[image], 'copied': copied[image] }
 
+    response = requests.get(sync_trigger_url)
+    results['upload'] = { 'status': response.status_code, 'msg': response.text }
     json.dump(results, f)
