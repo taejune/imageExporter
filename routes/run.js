@@ -1,15 +1,19 @@
 var express = require('express');
 var router = express.Router();
 const {spawn} = require("child_process");
-var sem = require('semaphore')(5);
+const max_workers = 2;
+var sem = require('semaphore')(max_workers);
 
 router.get('/info', function (req, res, next) {
-    res.send("upload to " + process.env.UPLOAD_URL + "(running " + sem.available() + ")");
+    res.send(`tar ${process.env.TAR_PATH} and upload to ${process.env.UPLOAD_SCP_PATH}`)
 });
 
 router.get('/', function (req, res, next) {
+    if (!sem.available()) {
+        res.status(503).send("no available...");
+    }
     sem.take(function () {
-        const child = spawn("./archive-upload.sh", [process.env.ARCHIVE_DIR, process.env.UPLOAD_URL]);
+        const child = spawn("./archive-upload.sh", [process.env.TAR_PATH, process.env.UPLOAD_SCP_PATH, process.env.UPLOAD_SCP_PASS]);
         child.stdout.on("data", data => {
             console.log(`stdout: ${data}`);
         });
@@ -17,15 +21,16 @@ router.get('/', function (req, res, next) {
             console.log(`stderr: ${data}`);
         });
         child.on('error', (error) => {
+            sem.leave()
             console.log(`error: ${error.message}`);
             res.status(500).send(`[ERROR]: ${error.message}`);
         });
         child.on("close", code => {
-            console.log(`child process exited with code ${code}`);
             sem.leave()
+            console.log(`child process exited with code ${code}`);
+            res.send(`success`);
         });
     })
-    res.send();
 });
 
 module.exports = router;

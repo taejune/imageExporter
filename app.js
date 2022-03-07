@@ -20,15 +20,15 @@ app.use(express.urlencoded({extended: false}));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(function (req, res, next) {
-    if (!process.env['ARCHIVE_DIR'] || !process.env['UPLOAD_URL']) {
-        console.error('ARCHIVE_DIR or UPLOAD_URL is not set')
-        next(createError(500))
+    if (!process.env['TAR_PATH'] || !process.env['UPLOAD_SCP_PATH'] || !process.env['UPLOAD_SCP_PASS']) {
+        console.error('TAR_PATH or UPLOAD_SCP_PATH or UPLOAD_SCP_PASS is not set')
+        next(createError(404))
         return
     }
 
-    if (!fs.existsSync(process.env.ARCHIVE_DIR)) {
-        console.error('no exist ' + process.env.ARCHIVE_DIR)
-        next(createError(500))
+    if (!fs.existsSync(process.env.TAR_PATH)) {
+        console.error(`TAR_PATH(${process.env.TAR_PATH}) not exist`)
+        next(createError(404))
         return
     }
     next();
