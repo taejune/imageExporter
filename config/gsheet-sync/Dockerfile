@@ -29,6 +29,7 @@ ADD requirements.txt /app
 ADD entrypoint.sh /app
 ADD regsync.py /app
 ADD skopeoutil.py /app
+ADD server.py /app
 
 RUN pip install -r requirements.txt
 

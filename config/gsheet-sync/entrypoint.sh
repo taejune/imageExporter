@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-python3 sync.py
+python3 server.py
