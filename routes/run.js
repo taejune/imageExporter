@@ -8,6 +8,13 @@ router.get('/info', function (req, res, next) {
     res.send(`tar ${process.env.TAR_PATH} and upload to ${process.env.UPLOAD_SCP_PATH}`)
 });
 
+router.get('/status', function (req, res, next) {
+    if (!sem.available()) {
+        res.send("no available...");
+    }
+    res.send("available...");
+});
+
 router.get('/', function (req, res, next) {
     if (!sem.available()) {
         res.status(503).send("no available...");
@@ -30,7 +37,7 @@ router.get('/', function (req, res, next) {
         child.on("close", code => {
             sem.leave()
             console.log(`child process exited with code ${code}`);
-            if(code != 0) {
+            if (code != 0) {
                 res.status(500).send(`failed code:${code}/ msg: ${errmsg}`)
             }
             res.send(`success`);
