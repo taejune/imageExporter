@@ -65,7 +65,7 @@ class myHandler(BaseHTTPRequestHandler):
     if message.get('output') == None:
         message['output'] = '/tmp'
     if message.get('notify') == None:
-        message['notify'] = 'http://localhost:3000'
+        message['notify'] = 'http://localhost:3000/run'
 
     body = f"""
 Parse google sheet{message['sheet']}(({message['idx']})) in column {message['col']} from {message['row']}
