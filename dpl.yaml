@@ -28,7 +28,7 @@ spec:
         imagePullPolicy: Always
         env:
           - name: SHEET_URL
-            value: https://docs.google.com/spreadsheets/d/1_KVOzzVlAl8VQ6y6I4y2NnsokjF-yE51uOXcZPyzDEU/edit#gid=0
+            value: https://docs.google.com/spreadsheets/d/1zBHhKvdz5sv2HZFWGcbsvAVFspQAvm_yEYtY9ZffSZc/edit#gid=769436284
           - name: SHEET_IDX
             value: "0"
           - name: COL_NUM
