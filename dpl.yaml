@@ -17,24 +17,57 @@ spec:
       containers:
       - name: registry
         image: registry:2.7.1
+        imagePullPolicy: Always
         ports:
         - containerPort: 5000
         volumeMounts:
         - mountPath: /var/lib/registry
           name: docker-registry-storage
-      - name: archiver
+      - name: sync
         image: tmaxcloudck/gsheet-sync:dev
+        imagePullPolicy: Always
+        env:
+          - name: SHEET_URL
+            value: https://docs.google.com/spreadsheets/d/1_KVOzzVlAl8VQ6y6I4y2NnsokjF-yE51uOXcZPyzDEU/edit#gid=0
+          - name: SHEET_IDX
+            value: 0
+          - name: COL_NUM
+            value: 1
+          - name: ROW_FROM
+            value: 2
+          - name: REGISTRY_URL
+            value: localhost:5000
+          - name: DOCKER_CRED
+            valueFrom:
+              secretKeyRef:
+                name: regcred
+                key: dockerio
+          - name: QUAY_CRED
+            valueFrom:
+              secretKeyRef:
+                name: regcred
+                key: quayio
+          - name: GCR_CRED
+            valueFrom:
+              secretKeyRef:
+                name: regcred
+                key: gcr
+          - name: REPORT_PATH
+            value: /data
+          - name: NOTIFY_URL
+            value: http://localhost:3000/run
         ports:
           - containerPort: 8080
       - name: exporter
         image: tmaxcloudck/regarchiver:dev
+        imagePullPolicy: Always
         env:
           - name: TAR_PATH
             value: /data
           - name: UPLOAD_SCP_PATH
-            value: <enter_ftp_path>
+            value: ck-ftp@192.168.1.150:/home/ck-ftp/k8s/install/offline/supercloud-images
           - name: UPLOAD_SCP_PASS
-            value: <enter_ftp_pass>
+            value: ck-ftp
         ports:
           - containerPort: 3000
         volumeMounts:
@@ -44,9 +77,6 @@ spec:
       - name: docker-registry-storage
         persistentVolumeClaim:
           claimName: docker-registry-pvc
-      - name: nginx-conf
-        configMap:
-          name: nginx-conf
 ---
 apiVersion: v1
 kind: Service
@@ -78,9 +108,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: docker-registry-pvc
 spec:
-  storageClassName: hostpath
+  storageClassName: rook-cephfs
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi
+      storage: 100Gi

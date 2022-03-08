@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: curl
+  name: image-sync-request
 spec:
   template:
     spec:
@@ -12,8 +12,8 @@ spec:
             - "/bin/sh"
             - "-c"
             - |
-              curl -X "POST" "http://172.26.227.231:30800" \
+              curl -X "POST" "http://192.168.0.3:30800" \
               -H 'Content-Type: application/json' \
-              -d '{"sheet":"https://docs.google.com/spreadsheets/d/1_KVOzzVlAl8VQ6y6I4y2NnsokjF-yE51uOXcZPyzDEU/edit#gid=0","docker":"tmaxcloudck@tmax@cloud"}'
+              -d '{}'
       restartPolicy: Never
   backoffLimit: 4
