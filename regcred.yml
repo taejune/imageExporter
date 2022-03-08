@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: regcred
+type: Opaque
+data:
+  dockerio: <enter_dockerio_credential>
+  quayio: <enter_quayio_credential>
+  gcr: ""
