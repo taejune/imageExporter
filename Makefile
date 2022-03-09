@@ -13,3 +13,11 @@ build:
 push:
 	@echo "push $(REPO)/$(IMAGE):$(TAG)..."
 	@$(DOCKERPUSH) $(REPO)/$(IMAGE):$(TAG)
+
+run:
+	@docker run --name exporter -it --rm \
+		-p 3000:3000 \
+		-e TAR_PATH=/tmp/archiving \
+		-e UPLOAD_SCP_PATH= \
+		-e UPLOAD_SCP_PASS= \
+		$(REPO)/$(IMAGE):$(TAG)
