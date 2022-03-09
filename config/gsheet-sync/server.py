@@ -45,13 +45,13 @@ class myHandler(BaseHTTPRequestHandler):
     return None
 
   def do_POST(self):
+    print('{request} from {client}...'.format(request=self.requestline, client=self.client_address))
     ctype, pdict = cgi.parse_header(self.headers['Content-Type'])
     # refuse to receive non-json content
     if ctype != 'application/json':
       self.send_response(400)
       self.end_headers()
       return
-
     # read the message and convert it into a python dictionary
     length = int(self.headers['Content-Length'])
     message = json.loads(self.rfile.read(length))
@@ -75,14 +75,19 @@ class myHandler(BaseHTTPRequestHandler):
     if message.get('notify') == None:
         message['notify'] = os.environ['NOTIFY_URL'] if os.environ.get('NOTIFY_URL') is not None else DEFAULT_NOTIFY_URL
 
+    print('Sync {reg} to {reg}'.format(sheet=message['sheet'],  reg=message['reg']))
     res = regsync.run(message['sheet'], int(message['idx']), int(message['col']), int(message['row']),
         message['reg'], message['docker'], message['quay'], message['gcr'], message['notify'])
 
+    print('Uploading {reg}'.format(sheet=message['sheet'],  reg=message['reg']))
+    #     response = requests.get(notify_to)
+    #     results['uploads'] = { 'status': response.status_code, 'msg': response.text }
     self.__set_Header(200)
     self.wfile.write(bytes(json.dumps(res), 'utf-8'))
 
   def do_GET(self):
     self.__set_Header(200)
 
+print('Listening on 8080...')
 httpd = HTTPServer(('', 8080), myHandler)
 httpd.serve_forever()

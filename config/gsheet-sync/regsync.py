@@ -4,41 +4,46 @@ import requests
 import time
 import os
 import sys
+import re
 import skopeoutil
 import multiprocessing
 import concurrent.futures
 
-def run(sheet_url, sheet_idx, col, row, reg_url, docker_cred, quay_cred, gcr_cred, notify_to):
-    registries = {
-    'docker.io': {'regex': '^[a-z.]*docker.io/', 'credential': docker_cred},
-    'quay.io': {'regex': '^[a-z.]*quay.io/', 'credential': quay_cred},
-    'gcr': {'regex': '^[a-z.]*gcr.io/', 'credential': gcr_cred}}
+registries = {
+    'docker.io': {'regex': re.compile('^[a-z.]*docker.io/'), 'cred': ''},
+    'quay.io': {'regex': re.compile('^[a-z.]*quay.io/'), 'cred': ''},
+    'gcr': {'regex': re.compile('^[a-z.]*gcr.io/'), 'cred': ''}
+}
 
+def run(sheet_url, sheet_idx, col, start, reg_url, docker_cred, quay_cred, gcr_cred, notify_to):
     sheets = BeautifulSoup(requests.get(sheet_url).text, "lxml").find_all("table")
-    table = ([[td.text for td in row.find_all("td")] for row in sheets[sheet_idx].find_all("tr")])
-
+    table = ([[td.text for td in tr.find_all("td")] for tr in sheets[sheet_idx].find_all("tr")])
+#     pool = concurrent.futures.ProcessPoolExecutor(max_workers=2)
+#     procs = []
+#     for r in table[start:]:
+#         if len(row[col]) > 0:
+#             print('Copying image', row[col])
+#             procs.append(pool.submit(skopeo.copy_image, row[col], reg_url))
+#     for p in concurrent.futures.as_completed(procs):
+#         print('{img} copied {stat}'.format(img=p.result()[0], stat=p.result()[1]))
+#         copied.update({p.result()[0]: p.result()[1]})
+    registries['docker.io']['cred'] = docker_cred
+    registries['quay.io']['cred'] = quay_cred
+    registries['gcr']['cred'] = gcr_cred
     skopeo = skopeoutil.SkopeoUtil(registries)
-    pool = concurrent.futures.ProcessPoolExecutor(max_workers=5)
-    procs = []
-    checked = {}
-    for r in table[row:]:
-        if len(r[col]) > 0:
-            procs.append(pool.submit(skopeo.check_image, r[col]))
-    for p in concurrent.futures.as_completed(procs):
-        checked.update({p.result()[0]: p.result()[1]})
 
-    copied = {}
-    for r in table[row:]:
-        if len(r[col]) > 0:
-            procs.append(pool.submit(skopeo.copy_image, r[col], reg_url))
-    for p in concurrent.futures.as_completed(procs):
-        copied.update({p.result()[0]: p.result()[1]})
+    successList = []
+    failList = []
+    for name in [row[col] for row in table[start:] if len(row[col]) > 0]:
+        img, ok, reason = skopeo.copy_image(name, reg_url)
+        if ok:
+            print('Copying {img} success'.format(img=img))
+            successList.append(img)
+        else:
+            print('[WARN] Copying {img} failed... (reason: {reason})'.format(img=img, reason=reason))
+            failList.append({img: reason})
 
     results = {'sync': {}}
-    for image in checked.keys():
-        results['sync'][image] = { 'access':  checked[image], 'copied': copied[image] }
-
-    response = requests.get(notify_to)
-    results['upload'] = { 'status': response.status_code, 'msg': response.text }
-
+    results['sync']['success'] = successList
+    results['sync']['failed'] = failList
     return results
